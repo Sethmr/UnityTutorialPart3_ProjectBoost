@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Rocket : MonoBehaviour {
 
@@ -9,11 +10,17 @@ public class Rocket : MonoBehaviour {
     AudioSource audioSource;
     [SerializeField] float rcsThrust = 100f;
     [SerializeField] float mainThrust = 25f;
+    int currentScene;
+
+    enum State { Alive, Dying, Transcending }
+    State state = State.Alive;
 
     // Use this for initialization
     void Start () {
         rigidBody = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
+        currentScene = 0;
+        state = State.Alive;
     }
 	
 	// Update is called once per frame
@@ -25,27 +32,37 @@ public class Rocket : MonoBehaviour {
     {
         switch (collision.gameObject.tag)
         {
-            case "Friendly":
+            case "Friendly": case "Respawn":
                 print("Friendly");
                 break;
-            case "Fuel":
-                print("Fuel");
-                break;
-            case "Respawn":
-                print("Respawn");
-                break;
             case "Finish":
-                print("Finish");
+                if (state == State.Alive)
+                {
+                    state = State.Transcending;
+                    Invoke("LoadNextScene", 1f);
+                }         
                 break;
             default:
-                KillYou();
+                if (state == State.Alive)
+                {
+                    state = State.Dying;
+                    Invoke("KillYou", 1f);
+                }
                 break;
         }
     }
 
+    private void LoadNextScene()
+    {
+        currentScene++;
+        SceneManager.LoadScene(currentScene);
+        state = State.Alive;
+    }
+
     private void KillYou()
     {
-        throw new NotImplementedException();
+        SceneManager.LoadScene(currentScene);
+        state = State.Alive;
     }
 
     private void ProcessInput()
